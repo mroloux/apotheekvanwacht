@@ -8,8 +8,28 @@
 </div>
 
 <script>
+    $.support.cors = true;
+
     $(function () {
+
         moment.lang("nl");
+
+        if(!navigator.geolocation) {
+            navigator.geolocation = {};
+            navigator.geolocation.getCurrentPosition = function(callback) {
+                $.ajax({
+                    type: 'GET',
+                    url: 'http://freegeoip.net/json/',
+                    cache: false,
+                    async: true,
+                    crossDomain: true,
+                    dataType: "jsonp",
+                    success: function (data, status) {
+                        callback({ coords: { 'latitude': data.latitude, 'longitude': data.longitude }});
+                    }
+                });
+            }
+        }
 
         navigator.geolocation.getCurrentPosition(function (location) {
             zoekApothekenVanWacht(location.coords);
@@ -23,15 +43,14 @@
                 }
                 $('#loadingMessage').hide();
                 var apotheekVanWacht = data[0];
-                var section = $('<section class="apotheekVanWacht">')
-                        .append($('<h3>').html(apotheekVanWacht.naam));
+                var section = $('<div class="apotheekVanWacht">').append($('<h3>').html(apotheekVanWacht.naam));
                 var address = apotheekVanWacht.straatEnNummer + " - " + apotheekVanWacht.stad;
                 var tel = $('<div class="tel">').html($('<a>').attr('href', 'tel:' + apotheekVanWacht.tel).html(apotheekVanWacht.tel));
                 if (apotheekVanWacht.url) {
-                    tel.append(' - ').append($('<a target="_blank">').html('Website').attr('href', apotheekVanWacht.url));
+                    tel.append(' - ').append($('<a>').attr('target', '_blank').html('Website').attr('href', apotheekVanWacht.url));
                 }
                 section
-                        .append($('<div>').html($('<a target="_blank">').attr('href', 'http://maps.google.com/maps?daddr=' + address).html(address)))
+                        .append($('<div>').html($('<a>').attr('target', '_blank').attr('href', 'http://maps.google.com/maps?daddr=' + address).html(address)))
                         .append($('<div>').html("(" + formatAfstand(apotheekVanWacht.afstand) + " van hier)"))
                         .append(tel)
                         .append($('<div>').html("Wachtdienst eindigt " + moment(apotheekVanWacht.eindDatum, "DD/MM/YYYY hh:mm:ss").calendar()))
@@ -50,6 +69,10 @@
                 return "minder dan een kilometer";
             }
             return afstand.toFixed(0) + " kilometer";
+        }
+
+        function olderThanIE9() {
+            return $.browser.msie && $.browser.version < 9;
         }
     });
 </script>
