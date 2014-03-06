@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <link href="//fonts.googleapis.com/css?family=Ubuntu:300italic,300,400italic,400,500italic,500,700italic,700" rel="stylesheet" type="text/css">
+        <title>#{get 'title' /}</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <link rel="stylesheet" media="screen" href="@{'/public/stylesheets/main.css'}">
+        #{get 'moreStyles' /}
+        <script src="//code.jquery.com/jquery-1.11.0.min.js" type="text/javascript" charset="${_response_encoding}"></script>
+        <script src="/public/javascripts/moment-with-langs.min.js"></script>
+    #{get 'moreScripts' /}
+    </head>
+    <body>
+        #{doLayout /}
+    </body>
+</html>

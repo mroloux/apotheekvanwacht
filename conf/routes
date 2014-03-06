@@ -1,0 +1,9 @@
+GET     /                                       Application.index
+
+GET     /zoekApothekenVanWacht/{latitude}/{longitude} ApothekenVanWachtController.zoekApothekenVanWacht
+
+GET     /favicon.ico                            404
+
+GET     /public/                                staticDir:public
+
+*       /{controller}/{action}                  {controller}.{action}

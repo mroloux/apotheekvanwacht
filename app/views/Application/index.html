@@ -1,0 +1,45 @@
+#{extends 'main.html' /}
+#{set title:'Apotheek van wacht' /}
+
+<div id="bodyWrapper">
+    <div id="body">
+        <div id="loadingMessage">De apotheek van wacht het dichtst bij je in de buurt komt er aan.<br/><img class="spinner" src="/public/images/ajax-loader.gif"></div>
+    </div>
+</div>
+
+<script>
+    $(function () {
+        moment.lang("nl");
+
+        navigator.geolocation.getCurrentPosition(function (location) {
+            zoekApothekenVanWacht(location.coords);
+        });
+
+        function zoekApothekenVanWacht(coordinates) {
+            $.get('/zoekApothekenVanWacht/' + coordinates.latitude + '/' + coordinates.longitude, function (data) {
+                $('#loadingMessage').hide();
+                var apotheekVanWacht = data[0];
+                var section = $('<section class="apotheekVanWacht">')
+                        .append($('<h3>').html(apotheekVanWacht.naam));
+                var address = apotheekVanWacht.straatEnNummer + " - " + apotheekVanWacht.stad;
+                var tel = $('<div class="tel">').html($('<a>').attr('href', 'tel:' + apotheekVanWacht.tel).html(apotheekVanWacht.tel));
+                if (apotheekVanWacht.url) {
+                    tel.append(' - ').append($('<a target="_blank">').html('Website').attr('href', apotheekVanWacht.url));
+                }
+                section
+                        .append($('<div>').html($('<a target="_blank">').attr('href', 'http://maps.google.com/maps?daddr=' + address).html(address)))
+                        .append($('<div>').html("(" + formatAfstand(apotheekVanWacht.afstand) + " van hier)"))
+                        .append(tel)
+                        .append($('<div>').html("Wachtdienst eindigt " + moment(apotheekVanWacht.eindDatum, "DD/MM/YYYY hh:mm:ss").calendar()));
+                section.appendTo($('#body'))
+            });
+        }
+
+        function formatAfstand(afstand) {
+            if(afstand < 1) {
+                return "minder dan een kilometer";
+            }
+            return afstand.toFixed(0) + " kilometer";
+        }
+    });
+</script>

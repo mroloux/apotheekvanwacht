@@ -1,0 +1,52 @@
+body, html {
+    height: 100%;
+    font-family: Ubuntu;
+    color: white;
+    margin: 0;
+    padding: 0;
+    background-color: #12a7e0;
+}
+
+#bodyWrapper {
+    display: table;
+    width: 100%;
+    height: 100%;
+}
+
+#body {
+    display: table-cell;
+    text-align: center;
+    vertical-align: middle;
+    padding: 10px;
+    font-size: 18px;
+}
+
+.spinner {
+    margin: 10px;
+}
+
+.apotheekVanWacht {
+    width: 280px;
+    margin: 0 auto;
+    padding: 30px;
+    border: 1px solid white;
+    border-radius: 6px;
+}
+
+.apotheekVanWacht h3 {
+    font-size: 1.5em;
+    line-height: 1em;
+    padding-bottom: 0.5em;
+    margin-bottom: 0.5em;
+    color: #d41d14;
+    font-weight: bold;
+}
+
+.apotheekVanWacht .tel {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+.apotheekVanWacht a {
+    color: black;
+}
