@@ -17,6 +17,10 @@
 
         function zoekApothekenVanWacht(coordinates) {
             $.get('/zoekApothekenVanWacht/' + coordinates.latitude + '/' + coordinates.longitude, function (data) {
+                if(data.length == 0) {
+                   showError();
+                    return;
+                }
                 $('#loadingMessage').hide();
                 var apotheekVanWacht = data[0];
                 var section = $('<section class="apotheekVanWacht">')
@@ -30,9 +34,15 @@
                         .append($('<div>').html($('<a target="_blank">').attr('href', 'http://maps.google.com/maps?daddr=' + address).html(address)))
                         .append($('<div>').html("(" + formatAfstand(apotheekVanWacht.afstand) + " van hier)"))
                         .append(tel)
-                        .append($('<div>').html("Wachtdienst eindigt " + moment(apotheekVanWacht.eindDatum, "DD/MM/YYYY hh:mm:ss").calendar()));
-                section.appendTo($('#body'))
+                        .append($('<div>').html("Wachtdienst eindigt " + moment(apotheekVanWacht.eindDatum, "DD/MM/YYYY hh:mm:ss").calendar()))
+                        .appendTo($('#body'));
+            }).error(function() {
+                showError();
             });
+        }
+
+        function showError() {
+            $('#loadingMessage').html('Het spijt ons, maar er ging iets mis. Probeer het op <a href="http://www.apotheek.be/apotheker/apotheek-van-wacht">apotheek.be</a>.');
         }
 
         function formatAfstand(afstand) {
