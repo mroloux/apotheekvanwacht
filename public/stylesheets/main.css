@@ -54,3 +54,9 @@ a {
 .apotheekVanWacht a {
     color: black;
 }
+
+#shareButtons {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}
