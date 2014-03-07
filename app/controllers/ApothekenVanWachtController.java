@@ -27,17 +27,24 @@ public class ApothekenVanWachtController extends Controller {
         renderJSON(gson.toJson(o).toString());
     }
 
-    public static void zoekApothekenVanWacht(float latitude, float longitude) throws DocumentException, ParseException {
-        List<ApotheekVanWacht> apothekenVanWacht = zoekApotheekVanWacht(new Coordinaten(latitude, longitude));
-        customRenderJSON(apothekenVanWacht);
+    public static void zoekApothekenVanWacht(float latitude, float longitude, String postalCode) throws DocumentException, ParseException {
+        try {
+            List<ApotheekVanWacht> apothekenVanWacht = zoekApotheekVanWacht(new Coordinaten(latitude, longitude), postalCode);
+            customRenderJSON(apothekenVanWacht);
+        } catch (BellenException e) {
+            renderJSON("\"bellen\"");
+        }
     }
 
-    private static List<ApotheekVanWacht> zoekApotheekVanWacht(Coordinaten coordinaten) throws DocumentException, ParseException {
+    private static List<ApotheekVanWacht> zoekApotheekVanWacht(Coordinaten coordinaten, String postalCode) throws DocumentException, ParseException, BellenException {
         List<ApotheekVanWacht> apothekenVanWacht = newArrayList();
         Date now = new Date();
-        WS.HttpResponse response = WS.url("http://admin.ringring.be/apb/public/duty_xml.asp?lang=1&lat=" + coordinaten.latitude + "&lng=" + coordinaten.longitude + "&date=" + dag(now) + "&hour=" + uur(now)).get();
+        WS.HttpResponse response = WS.url("http://admin.ringring.be/apb/public/duty_xml.asp?lang=1&pcode=" + postalCode + "&lat=" + coordinaten.latitude + "&lng=" + coordinaten.longitude + "&date=" + dag(now) + "&hour=" + uur(now)).get();
         Document document = new SAXReader().read(response.getStream());
         for (Element pharmacyEl : (List<Element>) document.selectNodes("//pharmacy")) {
+            if (pharmacyEl.attributeValue("code").equals("0903/92.248")) {
+                throw new BellenException();
+            }
             apothekenVanWacht.add(alsApotheekVanWacht(pharmacyEl));
         }
         return apothekenVanWacht;
@@ -50,7 +57,7 @@ public class ApothekenVanWachtController extends Controller {
         String tel = pharmacyEl.selectSingleNode("phone").getText();
         Node urlNode = pharmacyEl.selectSingleNode("url");
         String url = null;
-        if(urlNode != null) {
+        if (urlNode != null) {
             url = urlNode.getText();
         }
         Date eindDatum = eindDatum(pharmacyEl.selectSingleNode("hours").getText());

@@ -16,13 +16,21 @@
         }
 
         navigator.geolocation.getCurrentPosition(function (location) {
-            zoekApothekenVanWacht(location.coords);
+            zoekApothekenVanWacht(location.coords.latitude, location.coords.longitude);
         });
 
-        function zoekApothekenVanWacht(coordinates) {
-            $.get('/zoekApothekenVanWacht/' + coordinates.latitude + '/' + coordinates.longitude, function (data) {
+        function zoekApothekenVanWacht(latitude, longitude) {
+            getPostalCode(latitude, longitude, zoekApothekenVanWachtMetPostcode);
+        }
+
+        function zoekApothekenVanWachtMetPostcode(latitude, longitude, postalCode) {
+            $.get('/zoekApothekenVanWacht/' + latitude + '/' + longitude + "/" + postalCode, function (data) {
+                if(data == "bellen") {
+                    showBellenMessage();
+                    return;
+                }
                 if(data.length == 0) {
-                   showError();
+                    showError();
                     return;
                 }
                 $('#loadingMessage').hide();
@@ -39,9 +47,22 @@
                         .append(tel)
                         .append($('<div>').html("Wachtdienst eindigt " + moment(apotheekVanWacht.eindDatum, "DD/MM/YYYY hh:mm:ss").calendar()))
                         .appendTo($('#body'));
-            }).error(function() {
+            }).error(function(err) {
+                console.dir(err)
                 showError();
             });
+        }
+
+        function getPostalCode(latitude, longitude, callback) {
+            $.get('https://maps.googleapis.com/maps/api/geocode/json?latlng=' + latitude + ',' + longitude + '&sensor=false', function (data) {
+                callback(latitude, longitude, postalCode(data));
+            });
+
+            function postalCode(data) {
+                return data.results[0].address_components.findOne(function(component) {
+                    return component.types[0] == "postal_code";
+                }).long_name;
+            }
         }
 
         function geolocationShim() {
@@ -63,6 +84,10 @@
             $('#loadingMessage').html('Het spijt ons, maar er ging iets mis. Probeer het op <a href="http://www.apotheek.be/apotheker/apotheek-van-wacht">apotheek.be</a>.');
         }
 
+        function showBellenMessage() {
+            $('#loadingMessage').html('Tussen 22u en 9u moet je bellen naar het nummer <a href="tel:090392248">0903/92.248</a> voor de apotheek van wacht');
+        }
+
         function formatAfstand(afstand) {
             if(afstand < 1) {
                 return "minder dan een kilometer";
@@ -72,6 +97,14 @@
 
         function olderThanIE9() {
             return $.browser.msie && $.browser.version < 9;
+        }
+
+        Array.prototype.findOne = function (predicate) {
+            for (var i = 0; i < this.length; ++i) {
+                if (predicate(this[i])) {
+                    return this[i];
+                }
+            }
         }
     });
 </script>
