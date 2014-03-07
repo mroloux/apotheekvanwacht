@@ -1,6 +1,6 @@
 GET     /                                       Application.index
 
-GET     /zoekApothekenVanWacht/{latitude}/{longitude}/{postalCode} ApothekenVanWachtController.zoekApothekenVanWacht
+GET     /zoekApothekenVanWacht/{latitude}/{longitude} ApothekenVanWachtController.zoekApothekenVanWacht
 
 GET     /favicon.ico                            404
 

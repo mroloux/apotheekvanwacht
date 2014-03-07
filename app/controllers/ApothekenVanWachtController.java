@@ -1,7 +1,7 @@
 package controllers;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.common.base.Predicate;
+import com.google.gson.*;
 import models.ApotheekVanWacht;
 import org.apache.commons.lang.StringUtils;
 import org.dom4j.Document;
@@ -9,6 +9,7 @@ import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.Node;
 import org.dom4j.io.SAXReader;
+import play.libs.F;
 import play.libs.WS;
 import play.mvc.Controller;
 
@@ -17,6 +18,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
+import static com.google.common.collect.Iterables.find;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.lang.Double.parseDouble;
 
@@ -27,19 +29,20 @@ public class ApothekenVanWachtController extends Controller {
         renderJSON(gson.toJson(o).toString());
     }
 
-    public static void zoekApothekenVanWacht(float latitude, float longitude, String postalCode) throws DocumentException, ParseException {
+    public static void zoekApothekenVanWacht(float latitude, float longitude) throws DocumentException, ParseException {
         try {
-            List<ApotheekVanWacht> apothekenVanWacht = zoekApotheekVanWacht(new Coordinaten(latitude, longitude), postalCode);
+            List<ApotheekVanWacht> apothekenVanWacht = zoekApotheekVanWacht(latitude, longitude);
             customRenderJSON(apothekenVanWacht);
         } catch (BellenException e) {
             renderJSON("\"bellen\"");
         }
     }
 
-    private static List<ApotheekVanWacht> zoekApotheekVanWacht(Coordinaten coordinaten, String postalCode) throws DocumentException, ParseException, BellenException {
+    private static List<ApotheekVanWacht> zoekApotheekVanWacht(float latitude, float longitude) throws DocumentException, ParseException, BellenException {
         List<ApotheekVanWacht> apothekenVanWacht = newArrayList();
         Date now = new Date();
-        WS.HttpResponse response = WS.url("http://admin.ringring.be/apb/public/duty_xml.asp?lang=1&pcode=" + postalCode + "&lat=" + coordinaten.latitude + "&lng=" + coordinaten.longitude + "&date=" + dag(now) + "&hour=" + uur(now)).get();
+        F.Promise<WS.HttpResponse> promise = WS.url("http://admin.ringring.be/apb/public/duty_xml.asp?lang=1&pcode=" + postCode(latitude, longitude) + "&lat=" + latitude + "&lng=" + longitude + "&date=" + dag(now) + "&hour=" + uur(now)).getAsync();
+        WS.HttpResponse response = await(promise);
         Document document = new SAXReader().read(response.getStream());
         for (Element pharmacyEl : (List<Element>) document.selectNodes("//pharmacy")) {
             if (pharmacyEl.attributeValue("code").equals("0903/92.248")) {
@@ -48,6 +51,24 @@ public class ApothekenVanWachtController extends Controller {
             apothekenVanWacht.add(alsApotheekVanWacht(pharmacyEl));
         }
         return apothekenVanWacht;
+    }
+
+    private static String postCode(float latitude, float longitude) {
+        F.Promise<WS.HttpResponse> promise = WS.url("https://maps.googleapis.com/maps/api/geocode/json?latlng=" + latitude + "," + longitude + "&sensor=false").getAsync();
+        WS.HttpResponse response = await(promise);
+        JsonObject results = (JsonObject) new JsonParser().parse(response.getString());
+        JsonObject firstResult = (JsonObject) results.getAsJsonArray("results").get(0);
+        JsonObject postalCodeObject = (JsonObject) find(firstResult.getAsJsonArray("address_components"), postalCode());
+        return postalCodeObject.getAsJsonPrimitive("long_name").getAsString();
+    }
+
+    private static Predicate<JsonElement> postalCode() {
+        return new Predicate<JsonElement>() {
+            public boolean apply(JsonElement component) {
+                JsonArray types = ((JsonObject) component).getAsJsonArray("types");
+                return types.get(0).getAsString().equals("postal_code");
+            }
+        };
     }
 
     private static ApotheekVanWacht alsApotheekVanWacht(Element pharmacyEl) throws ParseException {
